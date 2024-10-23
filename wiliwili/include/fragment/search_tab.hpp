@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include <borealis.hpp>
 #include <utility>
 
 #include "bilibili.h"
@@ -20,7 +19,7 @@
 #include "utils/image_helper.hpp"
 #include "utils/number_helper.hpp"
 
-class SearchVideo;
+class SearchOrder;
 class SearchBangumi;
 class SearchCinema;
 class SearchHots;
@@ -30,18 +29,15 @@ typedef brls::Event<std::string> UpdateSearchEvent;
 
 class DataSourceSearchVideoList : public RecyclingGridDataSource {
 public:
-    DataSourceSearchVideoList(bilibili::VideoItemSearchListResult result)
-        : list(std::move(result)) {}
+    explicit DataSourceSearchVideoList(bilibili::VideoItemSearchListResult result) : list(std::move(result)) {}
 
-    RecyclingGridItem* cellForRow(RecyclingGrid* recycler,
-                                  size_t index) override {
+    RecyclingGridItem* cellForRow(RecyclingGrid* recycler, size_t index) override {
         //从缓存列表中取出 或者 新生成一个表单项
-        RecyclingGridItemVideoCard* item =
-            (RecyclingGridItemVideoCard*)recycler->dequeueReusableCell("Cell");
+        RecyclingGridItemVideoCard* item = (RecyclingGridItemVideoCard*)recycler->dequeueReusableCell("Cell");
 
         bilibili::VideoItemSearchResult& r = this->list[index];
-        item->setCard(r.cover + ImageHelper::h_ext, r.title, r.subtitle,
-                      r.pubdate, r.play, r.danmaku, "");
+        item->setCard(r.cover + ImageHelper::h_ext, r.title, r.subtitle, r.pubdate, r.play, r.danmaku,
+                      wiliwili::uglyString2Time(r.rightBottomBadge));
         return item;
     }
 
@@ -68,23 +64,19 @@ private:
 
 class DataSourceSearchPGCList : public RecyclingGridDataSource {
 public:
-    DataSourceSearchPGCList(bilibili::VideoItemSearchListResult result)
-        : list(std::move(result)) {}
+    DataSourceSearchPGCList(bilibili::VideoItemSearchListResult result) : list(std::move(result)) {}
 
-    RecyclingGridItem* cellForRow(RecyclingGrid* recycler,
-                                  size_t index) override {
+    RecyclingGridItem* cellForRow(RecyclingGrid* recycler, size_t index) override {
         //从缓存列表中取出 或者 新生成一个表单项
         RecyclingGridItemSearchPGCVideoCard* item =
-            (RecyclingGridItemSearchPGCVideoCard*)recycler->dequeueReusableCell(
-                "Cell");
+            (RecyclingGridItemSearchPGCVideoCard*)recycler->dequeueReusableCell("Cell");
 
         bilibili::VideoItemSearchResult& r = this->list[index];
 
         std::string score, score_count, cv, subtitle;
         if (r.media_score.score > 0) {
-            score_count = fmt::format(
-                "{}人评分", wiliwili::num2w(r.media_score.user_count));
-            score = fmt::format("{}分", r.media_score.score);
+            score_count = fmt::format("{}人评分", wiliwili::num2w(r.media_score.user_count));
+            score       = fmt::format("{}分", r.media_score.score);
         }
         if (!r.cv.empty()) {
             cv = "演员: " + r.cv;
@@ -92,14 +84,12 @@ public:
 
         std::vector<std::string> subtitles;
         if (!r.styles.empty()) subtitles.emplace_back(r.styles);
-        if (r.pubdate > 0)
-            subtitles.emplace_back(wiliwili::sec2dateV2(r.pubdate));
+        if (r.pubdate > 0) subtitles.emplace_back(wiliwili::sec2dateV2(r.pubdate));
         if (!r.index_show.empty()) subtitles.emplace_back(r.index_show);
         subtitle = pystring::join(" · ", subtitles);
 
-        item->setCard(r.cover + ImageHelper::v_ext, r.title, subtitle, cv,
-                      "简介: " + r.desc, r.badge.text, r.badge.bg_color,
-                      score_count, score, r.season_type_name, r.areas);
+        item->setCard(r.cover + ImageHelper::v_ext, r.title, subtitle, cv, "简介: " + r.desc, r.badge.text,
+                      r.badge.bg_color, score_count, score, r.season_type_name, r.areas);
         return item;
     }
 
@@ -128,24 +118,20 @@ public:
 
     static View* create();
 
-    void requestData(const std::string& key);
-
-    inline static std::string keyWord;
-
     void focusNthTab(int i);
 
     SearchHistory* getSearchHistoryTab();
 
     SearchHots* getSearchHotsTab();
 
-    SearchVideo* getSearchVideoTab();
+    SearchOrder* getSearchVideoTab();
 
     SearchBangumi* getSearchBangumiTab();
 
     SearchCinema* getSearchCinemaTab();
 
 private:
-    BRLS_BIND(SearchVideo, searchVideoTab, "search/tab/video");
+    BRLS_BIND(SearchOrder, searchVideoTab, "search/tab/video");
     BRLS_BIND(SearchBangumi, searchBangumiTab, "search/tab/bangumi");
     BRLS_BIND(SearchCinema, searchCinemaTab, "search/tab/cinema");
     BRLS_BIND(SearchHots, searchHotsTab, "search/tab/hots");

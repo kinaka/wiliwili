@@ -31,7 +31,7 @@ const std::string GA_URL = "https://www.google-analytics.com/mp/collect";
 #endif
 
 #ifdef NO_GA
-#define GA(a) void(a);
+#define GA(a, ...) void(a);
 #define GA_SEND void();
 #else
 #define GA(a, ...) analytics::Analytics::instance().report(a, ##__VA_ARGS__);
@@ -52,9 +52,9 @@ public:
 
     void report(const Event& event);
 
-    void report(std::string event);
+    void report(const std::string& event);
 
-    void report(std::string event, Params params);
+    void report(const std::string& event, const Params& params);
 
     void send();
 

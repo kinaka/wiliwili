@@ -9,16 +9,20 @@
 
 #pragma once
 
-#include <borealis.hpp>
+#include <borealis/core/box.hpp>
+#include <borealis/core/bind.hpp>
 
+namespace brls {
+class Label;
+}
 class AnimationImage;
-class CheckBox;
+class BiliCheckBox;
 
 class PlayerCoin : public brls::Box {
 public:
     PlayerCoin();
 
-    ~PlayerCoin();
+    ~PlayerCoin() override;
 
     void hideTwoCoin(bool value = true);
 
@@ -42,11 +46,11 @@ private:
     BRLS_BIND(brls::Label, labelHint, "coin/hint");
     BRLS_BIND(AnimationImage, img1, "coin/img/1");
     BRLS_BIND(AnimationImage, img2, "coin/img/2");
-    BRLS_BIND(CheckBox, checkBox, "coin/checkbox");
+    BRLS_BIND(BiliCheckBox, checkBox, "coin/checkbox");
     BRLS_BIND(brls::Box, likeBox, "coin/like");
 
     int coin = 2;
-    int exp = -1;
+    int exp  = -1;
 
     brls::Event<int> coinEvent;
 };

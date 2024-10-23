@@ -9,8 +9,15 @@
 
 #pragma once
 
-#include <borealis.hpp>
+#include <map>
+#include <borealis/core/application.hpp>
+#include <borealis/core/bind.hpp>
+#include <borealis/views/scrolling_frame.hpp>
 
+namespace brls {
+class Label;
+class Image;
+}  // namespace brls
 class RecyclingGrid;
 class ButtonRefresh;
 
@@ -101,7 +108,7 @@ public:
 
     RecyclingGridDataSource* getDataSource() const;
 
-    void showSkeleton(unsigned int num = 12);
+    void showSkeleton(unsigned int num = 30);
 
     void refresh();
 
@@ -151,10 +158,18 @@ public:
     void setPaddingBottom(float bottom) override;
     void setPaddingLeft(float left) override;
 
+    void setPaddingRightPercentage(float right);
+    void setPaddingLeftPercentage(float left);
+
+    float getPaddingLeft();
+    float getPaddingRight();
+
     // 获取一个列表项组件
     // 如果缓存列表中存在就从中取出一个
     // 如果缓存列表为空则生成一个新的
     RecyclingGridItem* dequeueReusableCell(std::string identifier);
+
+    brls::View* getDefaultFocus() override;
 
     ~RecyclingGrid() override;
 
@@ -193,6 +208,8 @@ private:
     float paddingBottom = 0;
     float paddingLeft   = 0;
 
+    bool paddingPercentage = false;
+
     std::function<void()> nextPageCallback = nullptr;
     std::function<void()> refreshAction    = nullptr;
 
@@ -214,7 +231,14 @@ private:
 
     void itemsRecyclingLoop();
 
-    void addCellAt(size_t index, int downSide);
+    /**
+     * 在指定位置添加一个列表项
+     * 内部更新 renderedFrame 的值，假设有一个每一项都绘制的超长列表，renderedFrame 的 y 表示当前截取绘制的顶部坐标，height 表示当前绘制的高度
+     * 当添加一个列表项时，renderedFrame 的 height 增加一项的高度（注意，只在每行的第一个列表项添加时才更新列表项的高度）
+     * @param index 指定的位置
+     * @param downSide 是向下添加还是向上添加，当向上添加时 将 renderedFrame 的 y 减去当前列表项的高度。（y 的值只在向上添加或移除时候改变）
+     */
+    void addCellAt(size_t index, bool downSide);
 };
 
 class RecyclingGridContentBox : public brls::Box {

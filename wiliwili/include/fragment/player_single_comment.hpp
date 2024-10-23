@@ -9,7 +9,9 @@
 
 #pragma once
 
-#include <borealis.hpp>
+#include <borealis/core/box.hpp>
+#include <borealis/core/bind.hpp>
+
 #include "bilibili/result/video_detail_result.h"
 
 class VideoComment;
@@ -17,12 +19,18 @@ class RecyclingGrid;
 class SVGImage;
 class ButtonClose;
 
+enum CommentUiType {
+    COMMENT_UI_TYPE_VIDEO,
+    COMMENT_UI_TYPE_DYNAMIC,
+
+};
+
 /// 评论详情页面
 class PlayerSingleComment : public brls::Box {
 public:
-    PlayerSingleComment();
+    PlayerSingleComment(CommentUiType type = COMMENT_UI_TYPE_VIDEO);
 
-    void setCommentData(const bilibili::VideoCommentResult& result, float y);
+    void setCommentData(const bilibili::VideoCommentResult& result, float y, int type);
 
     void requestData();
 
@@ -36,7 +44,7 @@ public:
 
     void showDismissAnimation();
 
-    brls::Event<bool> likeStateEvent;
+    brls::Event<size_t> likeStateEvent;
     brls::Event<size_t> likeNumEvent;
     brls::Event<size_t> replyNumEvent;
     brls::Event<> deleteEvent;
@@ -44,20 +52,21 @@ public:
 private:
     bilibili::VideoCommentResult root;
     bilibili::VideoCommentCursor cursor;
-    BRLS_BIND(RecyclingGrid, recyclingGrid,
-              "player/single/comment/recyclingGrid");
+    BRLS_BIND(RecyclingGrid, recyclingGrid, "player/single/comment/recyclingGrid");
     BRLS_BIND(ButtonClose, closeBtn, "button/close");
     BRLS_BIND(brls::Box, backgroundBox, "box/background");
     BRLS_BIND(brls::Box, cancel, "player/cancel");
 
     brls::Animatable position     = 0.0f;
     float commentOriginalPosition = 0.0f;
+    int commentType               = 1;
+    CommentUiType uiType          = COMMENT_UI_TYPE_VIDEO;
 };
 
 /// 选择对单条评论的行为：点赞、回复、删除
 class PlayerCommentAction : public brls::Box {
 public:
-    PlayerCommentAction();
+    PlayerCommentAction(CommentUiType type);
 
     void setActionData(const bilibili::VideoCommentResult& data, float y);
 
@@ -67,7 +76,8 @@ public:
 
     void dismiss(std::function<void(void)> cb = nullptr) override;
 
-    brls::Event<> likeClickEvent, replyClickEvent, deleteClickEvent;
+    brls::Event<> replyClickEvent, deleteClickEvent;
+    brls::Event<size_t> likeClickEvent;
 
     void showStartAnimation();
 
@@ -76,6 +86,7 @@ public:
 private:
     BRLS_BIND(SVGImage, svgReply, "comment/action/svg/reply");
     BRLS_BIND(SVGImage, svgLike, "comment/action/svg/like");
+    BRLS_BIND(SVGImage, svgDisLike, "comment/action/svg/dislike");
     BRLS_BIND(SVGImage, svgDelete, "comment/action/svg/delete");
     BRLS_BIND(SVGImage, svgGallery, "comment/action/svg/gallery");
     BRLS_BIND(brls::Box, actionBox, "comment/action/box");

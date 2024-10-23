@@ -9,7 +9,9 @@
 
 #pragma once
 
-#include <borealis.hpp>
+#include <borealis/core/box.hpp>
+#include <borealis/core/bind.hpp>
+
 #include "bilibili.h"
 #include "view/recycling_grid.hpp"
 #include "bilibili/result/mine_collection_result.h"
@@ -35,6 +37,7 @@ private:
     BRLS_BIND(brls::Label, labelSubtitle, "collection/label/subtitle");
     BRLS_BIND(brls::Image, imageCover, "collection/cover");
     BRLS_BIND(RecyclingGrid, recyclingGrid, "collection/recyclingGrid");
+    BRLS_BIND(brls::AppletFrame, appletFrame, "collection/appletFrame");
 
     unsigned int requestIndex = 1;
     int requestType           = 1;

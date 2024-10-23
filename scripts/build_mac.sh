@@ -25,10 +25,7 @@ mkdir -p "${APP_PATH}"/Contents/Resources
 
 cp ./scripts/mac/Info.plist "${APP_PATH}"/Contents/Info.plist
 
-version_major=$(jq .version_major resources/i18n/en-US/version.json)
-version_minor=$(jq .version_minor resources/i18n/en-US/version.json)
-version_revision=$(jq .version_revision resources/i18n/en-US/version.json)
-version=${version_major}.${version_minor}.${version_revision}
+version=$3
 git_tag=$(git rev-parse --short HEAD)
 
 /usr/bin/sed -i '' '35s/1.0/'"${version}"'/' "${APP_PATH}"/Contents/Info.plist
@@ -48,7 +45,8 @@ else
     bundle_deps="-b"
   else
     echo "bundle deps: $2"
-    cp -r "$2" "${APP_PATH}"/Contents/MacOS/lib
+    mkdir -p "${APP_PATH}"/Contents/MacOS/lib
+    cp "$2"/*.dylib "${APP_PATH}"/Contents/MacOS/lib
   fi
   dylibbundler -cd ${bundle_deps} -x "${APP_PATH}"/Contents/MacOS/wiliwili \
     -d "${APP_PATH}"/Contents/MacOS/lib/ -p @executable_path/lib/

@@ -2,6 +2,11 @@
 // Created by fang on 2022/8/21.
 //
 
+#include <borealis/core/i18n.hpp>
+#include <borealis/core/touch/tap_gesture.hpp>
+#include <borealis/views/label.hpp>
+#include <borealis/views/dialog.hpp>
+
 #include "activity/hint_activity.hpp"
 #include "view/gallery_view.hpp"
 #include "analytics.h"
@@ -37,6 +42,8 @@ const std::string galleryItemInstallNSPXML = R"xml(
         <brls:Label
                 positionType="absolute"
                 positionBottom="4%"
+                horizontalAlign="center"
+                width="1500"
                 id="gallery/label"
                 text="@i18n/wiliwili/hints/hint4"
                 fontSize="24"/>
@@ -96,6 +103,4 @@ void HintActivity::onContentAvailable() {
 #endif
 }
 
-HintActivity::~HintActivity() {
-    brls::Logger::debug("HintActivityActivity: delete");
-}
+HintActivity::~HintActivity() { brls::Logger::debug("HintActivityActivity: delete"); }

@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include <borealis.hpp>
 #include "presenter/user_home.hpp"
 #include "view/auto_tab_frame.hpp"
 
@@ -18,6 +17,11 @@ class MineHistory;
 class MineCollection;
 class MineBangumi;
 class MineLater;
+
+namespace brls {
+class Label;
+class Image;
+}  // namespace brls
 
 class MineTab : public AttachedView, public UserHome {
 public:
@@ -45,6 +49,7 @@ private:
     BRLS_BIND(MineHistory, mineHistory, "mine/history");
     BRLS_BIND(MineLater, mineLater, "mine/Later");
     BRLS_BIND(MineCollection, mineCollection, "mine/collection");
+    BRLS_BIND(MineCollection, mineSubscription, "mine/subscription");
     BRLS_BIND(MineBangumi, mineAnime, "mine/anime");
     BRLS_BIND(MineBangumi, mineSeries, "mine/series");
     BRLS_BIND(brls::Label, labelSign, "mine/label/sign");

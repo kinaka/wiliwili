@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include <borealis.hpp>
 #include "view/recycling_grid.hpp"
 #include "view/user_info.hpp"
 #include "bilibili/result/video_detail_result.h"
@@ -64,7 +63,7 @@ public:
 
     void setLikeNum(size_t num);
 
-    void setLiked(bool liked);
+    void setLiked(size_t action);
 
     bilibili::VideoCommentResult getData();
 
@@ -84,5 +83,6 @@ protected:
     BRLS_BIND(SVGImage, userLevel, "comment/user/level");
     BRLS_BIND(SVGImage, svgReply, "comment/svg/reply");
     BRLS_BIND(SVGImage, svgLike, "comment/svg/like");
+    BRLS_BIND(SVGImage, svgDislike, "comment/svg/dislike");
     bilibili::VideoCommentResult comment_data;
 };

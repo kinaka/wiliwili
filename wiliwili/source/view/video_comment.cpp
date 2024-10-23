@@ -2,12 +2,14 @@
 // Created by fang on 2022/7/18.
 //
 
+#include <borealis/core/touch/tap_gesture.hpp>
+#include <pystring.h>
+
 #include "view/video_comment.hpp"
 #include "view/text_box.hpp"
 #include "view/svg_image.hpp"
 #include "utils/number_helper.hpp"
 #include "utils/string_helper.hpp"
-#include "bilibili.h"
 
 using namespace brls::literals;
 
@@ -19,10 +21,24 @@ enum class CommentElementType {
     NONE,
 };
 
+/// 为评论中的表情包添加分辨率后缀，不加后缀则直接加载原图
+static inline std::string parseUrl(const std::string& url, const std::string& extra) {
+    // url 中可能已经包含了指定的尺寸，需要移除指定的尺寸并重新添加
+    // 示例: http://i0.hdslb.com/bfs/garb/emote_diy/ee38500008e72e5623f8972a6ea3d922.png@162w
+    // 绝大多数情况下，额外的尺寸都是不存在的
+    for (auto it = url.rbegin(); it != url.rend(); ++it) {
+        if (*it == '.') {
+            return url + extra;
+        } else if (*it == '@') {
+            return url.substr(0, url.size() - (it - url.rbegin()) - 1) + extra;
+        }
+    }
+    return url + extra;
+}
+
 class CommentElement {
 public:
-    CommentElement(const std::string& title, CommentElementType type)
-        : title(title), type(type) {}
+    CommentElement(const std::string& title, CommentElementType type) : title(title), type(type) {}
     std::string title;
     CommentElementType type;
     bool matchDone = false;  // 为真则不参与匹配
@@ -30,31 +46,24 @@ public:
 
 class CommentElementEmote : public CommentElement {
 public:
-    CommentElementEmote(const std::string& title, const std::string& url,
-                        int size)
-        : CommentElement(title, CommentElementType::EMOTE),
-          url(url),
-          size(size) {}
+    CommentElementEmote(const std::string& title, const std::string& url, int size)
+        : CommentElement(title, CommentElementType::EMOTE), url(url), size(size) {}
     std::string url;
     int size = 1;
 };
 
 class CommentElementUser : public CommentElement {
 public:
-    CommentElementUser(const std::string& name, int64_t id)
-        : CommentElement("@" + name + " ", CommentElementType::USER),
-          name(name),
-          id(id) {}
+    CommentElementUser(const std::string& name, uint64_t id)
+        : CommentElement("@" + name + " ", CommentElementType::USER), name(name), id(id) {}
     std::string name;
-    int64_t id;
+    uint64_t id;
 };
 
 class CommentElementTopic : public CommentElement {
 public:
     CommentElementTopic(const std::string& topic, const std::string& uri)
-        : CommentElement("#" + topic + "#", CommentElementType::TOPIC),
-          topic(topic),
-          uri(uri) {}
+        : CommentElement("#" + topic + "#", CommentElementType::TOPIC), topic(topic), uri(uri) {}
     std::string topic;
     std::string uri;
 };
@@ -66,8 +75,7 @@ enum class CommentElementJumpType {
 
 class CommentElementJump : public CommentElement {
 public:
-    CommentElementJump(const std::string& title, const std::string& show,
-                       const std::string& icon, int position,
+    CommentElementJump(const std::string& title, const std::string& show, const std::string& icon, int position,
                        CommentElementJumpType type)
         : CommentElement(title, CommentElementType::JUMP),
           showTitle(show),
@@ -86,17 +94,12 @@ VideoComment::VideoComment() {
     brls::Logger::verbose("View VideoComment: create");
     this->inflateFromXMLRes("xml/views/video_comment.xml");
 
-    this->registerColorXMLAttribute("mainTextColor", [this](NVGcolor value) {
-        this->setMainTextColor(value);
-    });
+    this->registerColorXMLAttribute("mainTextColor", [this](NVGcolor value) { this->setMainTextColor(value); });
 
-    this->registerFloatXMLAttribute(
-        "maxRows", [this](float value) { this->setMaxRows((size_t)value); });
+    this->registerFloatXMLAttribute("maxRows", [this](float value) { this->setMaxRows((size_t)value); });
 }
 
-VideoComment::~VideoComment() {
-    brls::Logger::verbose("View VideoComment: delete");
-}
+VideoComment::~VideoComment() { brls::Logger::verbose("View VideoComment: delete"); }
 
 RecyclingGridItem* VideoComment::create() { return new VideoComment(); }
 
@@ -105,9 +108,7 @@ void VideoComment::setMainTextColor(NVGcolor color) {
     this->userInfo->setMainTextColor(color);
 }
 
-void VideoComment::setMaxRows(size_t value) {
-    this->commentContent->setMaxRows(value);
-}
+void VideoComment::setMaxRows(size_t value) { this->commentContent->setMaxRows(value); }
 
 void VideoComment::setData(bilibili::VideoCommentResult data) {
     this->comment_data = data;
@@ -136,27 +137,19 @@ void VideoComment::setData(bilibili::VideoCommentResult data) {
     // 将表情包、@、跳转、话题 整合进一个map里
     CEMap commentElement;
     for (auto& i : data.content.emote) {
-        commentElement.insert(
-            {i.first, std::make_shared<CommentElementEmote>(
-                          i.first, i.second.url, i.second.size)});
+        commentElement.insert({i.first, std::make_shared<CommentElementEmote>(i.first, i.second.url, i.second.size)});
     }
     for (auto& i : data.content.at_name_to_mid) {
-        commentElement.insert(
-            {"@" + i.first + " ",
-             std::make_shared<CommentElementUser>(i.first, i.second)});
+        commentElement.insert({"@" + i.first + " ", std::make_shared<CommentElementUser>(i.first, i.second)});
     }
     for (auto& i : data.content.jump_url) {
         commentElement.insert(
             {i.first, std::make_shared<CommentElementJump>(
-                          i.first, i.second.title, i.second.prefix_icon,
-                          i.second.icon_position,
-                          i.second.search ? CommentElementJumpType::SEARCH
-                                          : CommentElementJumpType::NONE)});
+                          i.first, i.second.title, i.second.prefix_icon, i.second.icon_position,
+                          i.second.search ? CommentElementJumpType::SEARCH : CommentElementJumpType::NONE)});
     }
     for (auto& i : data.content.topics_uri) {
-        commentElement.insert(
-            {"#" + i.first + "#",
-             std::make_shared<CommentElementTopic>(i.first, i.second)});
+        commentElement.insert({"#" + i.first + "#", std::make_shared<CommentElementTopic>(i.first, i.second)});
     }
 
     // 识别评论组件
@@ -175,8 +168,7 @@ void VideoComment::setData(bilibili::VideoCommentResult data) {
         if (matchElement == nullptr) nextMatch = msg.length() - 1;
         if (start < nextMatch) {
             // 纯文本
-            auto item = std::make_shared<RichTextSpan>(
-                msg.substr(start, nextMatch - start) + "\r", textColor);
+            auto item = std::make_shared<RichTextSpan>(msg.substr(start, nextMatch - start) + "\r", textColor);
             d.emplace_back(item);
         }
         if (matchElement == nullptr) break;
@@ -186,12 +178,10 @@ void VideoComment::setData(bilibili::VideoCommentResult data) {
                 auto* t = (CommentElementEmote*)matchElement.get();
                 std::shared_ptr<RichTextImage> item;
                 if (t->size == 2) {
-                    item = std::make_shared<RichTextImage>(
-                        t->url + ImageHelper::emoji_size2_ext, 50, 50);
+                    item = std::make_shared<RichTextImage>(parseUrl(t->url, ImageHelper::emoji_size2_ext), 50, 50);
                     item->t_margin = 4;
                 } else {
-                    item = std::make_shared<RichTextImage>(
-                        t->url + ImageHelper::emoji_size1_ext, 30, 30);
+                    item = std::make_shared<RichTextImage>(parseUrl(t->url, ImageHelper::emoji_size1_ext), 30, 30);
                 }
                 item->v_align  = 4;
                 item->l_margin = 2;
@@ -200,8 +190,8 @@ void VideoComment::setData(bilibili::VideoCommentResult data) {
                 break;
             }
             case CommentElementType::USER: {
-                auto* t   = (CommentElementUser*)matchElement.get();
-                auto item = std::make_shared<RichTextSpan>(t->title, linkColor);
+                auto* t        = (CommentElementUser*)matchElement.get();
+                auto item      = std::make_shared<RichTextSpan>(t->title, linkColor);
                 item->l_margin = 8;
                 item->r_margin = 8;
                 d.emplace_back(item);
@@ -216,16 +206,13 @@ void VideoComment::setData(bilibili::VideoCommentResult data) {
             case CommentElementType::JUMP: {
                 auto* t = (CommentElementJump*)matchElement.get();
                 if (!t->icon.empty() && t->position == 0) {
-                    auto item =
-                        std::make_shared<RichTextImage>(t->icon, 30, 30);
+                    auto item     = std::make_shared<RichTextImage>(t->icon, 30, 30);
                     item->v_align = 5;
                     d.emplace_back(item);
                 }
-                d.emplace_back(
-                    std::make_shared<RichTextSpan>(t->showTitle, linkColor));
+                d.emplace_back(std::make_shared<RichTextSpan>(t->showTitle, linkColor));
                 if (!t->icon.empty() && t->position == 1) {
-                    auto item =
-                        std::make_shared<RichTextImage>(t->icon, 16, 30);
+                    auto item      = std::make_shared<RichTextImage>(t->icon, 16, 30);
                     item->v_align  = 5;
                     item->r_margin = 2;
                     d.emplace_back(item);
@@ -243,8 +230,7 @@ void VideoComment::setData(bilibili::VideoCommentResult data) {
     }
 
     // 笔记图片
-    if (!data.content.pictures.empty())
-        d.emplace_back(std::make_shared<RichTextSpan>("\n\n", textColor));
+    if (!data.content.pictures.empty()) d.emplace_back(std::make_shared<RichTextSpan>("\n\n", textColor));
 
     static constexpr float size    = 108;
     static constexpr float maxSize = 324;
@@ -260,17 +246,26 @@ void VideoComment::setData(bilibili::VideoCommentResult data) {
             w = picture.img_width / picture.img_height * h;
             if (w > maxSize) w = maxSize;
         }
-        auto item = std::make_shared<RichTextImage>(
-            picture.img_src + wiliwili::format(ImageHelper::note_custom_ext,
-                                          (int)(w * 5), (int)(h * 5)),
-            w, h);
+
+        const std::string custom_ext_jpg = "@{}w_{}h_85q_!note-comment-multiple.jpg";
+        std::string custom_ext           = ImageHelper::note_custom_ext;
+        if (picture.img_src.size() > 4 && picture.img_src.substr(picture.img_src.size() - 4, 4) == ".gif") {
+            // gif 图片暂时按照 jpg 来解析
+            custom_ext = custom_ext_jpg;
+        }
+        auto item = std::make_shared<RichTextImage>(picture.img_src + wiliwili::format(custom_ext,
+#ifdef __PSV__
+                                                                                       (int)(w * 0.5), (int)(h * 0.5)),
+#else
+                                                                                       (int)(w * 5), (int)(h * 5)),
+#endif
+                                                    w, h);
         item->t_margin = 8;
         d.emplace_back(item);
     } else {
         // 多张图片显示为正方形缩略图
         for (auto& picture : data.content.pictures) {
-            auto item = std::make_shared<RichTextImage>(
-                picture.img_src + ImageHelper::note_ext, size, size);
+            auto item      = std::make_shared<RichTextImage>(picture.img_src + ImageHelper::note_ext, size, size);
             item->r_margin = 8;
             item->t_margin = 8;
             d.emplace_back(item);
@@ -280,38 +275,37 @@ void VideoComment::setData(bilibili::VideoCommentResult data) {
     // 设置富文本
     this->commentContent->setRichText(d);
 
-    this->userInfo->setUserInfo(data.member.avatar + ImageHelper::face_ext,
-                                data.member.uname, subtitle);
+    // 设置用户信息
+    this->userInfo->setUserInfo(data.member.avatar + ImageHelper::face_ext, data.member.uname, subtitle);
+    if (data.member.vip.nickname_color.empty()) {
+        this->userInfo->setMainTextColor(brls::Application::getTheme().getColor("brls/text"));
+    } else {
+        this->userInfo->getLabelName()->applyXMLAttribute("textColor", data.member.vip.nickname_color);
+    }
 
+    // 设置用户等级
     int lv = data.member.level_info.current_level;
     if (lv < 0 || lv > 6) {
         this->userLevel->setVisibility(brls::Visibility::GONE);
     } else {
         this->userLevel->setVisibility(brls::Visibility::VISIBLE);
         if (data.member.is_uploader) {
-            this->userLevel->setImageFromSVGRes(
-                fmt::format("svg/user-up.svg", lv));
+            this->userLevel->setImageFromSVGRes(fmt::format("svg/user-up.svg", lv));
         } else if (lv == 6 && data.member.is_senior_member) {
             this->userLevel->setImageFromSVGRes("svg/user-lv6p.svg");
         } else {
-            this->userLevel->setImageFromSVGRes(
-                fmt::format("svg/user-lv{}.svg", lv));
+            this->userLevel->setImageFromSVGRes(fmt::format("svg/user-lv{}.svg", lv));
         }
     }
 
-    if (data.action) {
-        this->svgLike->setImageFromSVGRes("svg/comment-agree-active.svg");
-    } else {
-        this->svgLike->setImageFromSVGRes("svg/comment-agree-grey.svg");
-    }
-
+    // 设置点赞状态
+    // action, 0: 未点赞, 1: 已点赞, 2: 已点踩
+    this->setLiked(data.action);
     this->setLikeNum(data.like);
     this->setReplyNum(data.rcount);
 }
 
-bilibili::VideoCommentResult VideoComment::getData() {
-    return this->comment_data;
-}
+bilibili::VideoCommentResult VideoComment::getData() { return this->comment_data; }
 
 void VideoComment::setReplyNum(size_t num) {
     this->comment_data.rcount = num;
@@ -323,18 +317,21 @@ void VideoComment::setLikeNum(size_t num) {
     this->labelLike->setText(wiliwili::num2w(num));
 }
 
-void VideoComment::setLiked(bool liked) {
-    this->comment_data.action = liked;
-    if (liked) {
+void VideoComment::setLiked(size_t action) {
+    this->comment_data.action = action;
+    if (action == 1) {
         this->svgLike->setImageFromSVGRes("svg/comment-agree-active.svg");
+        this->svgDislike->setImageFromSVGRes("svg/comment-disagree-grey.svg");
+    } else if (action == 2) {
+        this->svgLike->setImageFromSVGRes("svg/comment-agree-grey.svg");
+        this->svgDislike->setImageFromSVGRes("svg/comment-disagree-active.svg");
     } else {
         this->svgLike->setImageFromSVGRes("svg/comment-agree-grey.svg");
+        this->svgDislike->setImageFromSVGRes("svg/comment-disagree-grey.svg");
     }
 }
 
-void VideoComment::prepareForReuse() {
-    this->userInfo->getAvatar()->setImageFromRes("pictures/default_avatar.png");
-}
+void VideoComment::prepareForReuse() { this->userInfo->getAvatar()->setImageFromRes("pictures/default_avatar.png"); }
 
 void VideoComment::hideReplyIcon(bool hide) {
     if (hide) {
@@ -346,9 +343,7 @@ void VideoComment::hideReplyIcon(bool hide) {
     }
 }
 
-void VideoComment::cacheForReuse() {
-    ImageHelper::clear(this->userInfo->getAvatar());
-}
+void VideoComment::cacheForReuse() { ImageHelper::clear(this->userInfo->getAvatar()); }
 
 /// GridHintView
 
@@ -357,8 +352,7 @@ GridHintView::GridHintView() {
     hintLabel = new brls::Label();
     hintLabel->setFontSize(16);
     hintLabel->setMarginLeft(8);
-    hintLabel->setTextColor(
-        brls::Application::getTheme().getColor("font/grey"));
+    hintLabel->setTextColor(brls::Application::getTheme().getColor("font/grey"));
     this->addView(hintLabel);
 }
 
@@ -381,9 +375,7 @@ VideoCommentReply::VideoCommentReply() {
     this->addView(hintLabel);
 }
 
-RecyclingGridItem* VideoCommentReply::create() {
-    return new VideoCommentReply();
-}
+RecyclingGridItem* VideoCommentReply::create() { return new VideoCommentReply(); }
 
 /// VideoCommentSort
 

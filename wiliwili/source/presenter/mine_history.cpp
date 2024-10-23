@@ -9,8 +9,7 @@
 
 using namespace brls::literals;
 
-void MineHistoryRequest::onHistoryList(
-    const bilibili::HistoryVideoResultWrapper &result) {}
+void MineHistoryRequest::onHistoryList(const bilibili::HistoryVideoResultWrapper &result) {}
 
 void MineHistoryRequest::onError(const std::string &error) {}
 
@@ -27,14 +26,14 @@ void MineHistoryRequest::requestHistoryVideoList() {
         return;
     }
     CHECK_AND_SET_REQUEST
-    bilibili::BilibiliClient::get_my_history(
+    BILI::get_my_history(
         cursor,
         [this](const bilibili::HistoryVideoResultWrapper &result) {
             this->onHistoryList(result);
             this->cursor = result.cursor;
             UNSET_REQUEST
         },
-        [this](const std::string &error) {
+        [this](BILI_ERR) {
             this->onError(error);
             UNSET_REQUEST
         });

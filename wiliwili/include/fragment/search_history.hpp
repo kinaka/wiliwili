@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <borealis.hpp>
 #include <view/auto_tab_frame.hpp>
 #include "activity/search_activity.hpp"
 
@@ -28,5 +27,6 @@ public:
 
 private:
     UpdateSearchEvent *updateSearchEvent = nullptr;
+    brls::Event<> clearSearchEvent;
     BRLS_BIND(RecyclingGrid, recyclingGrid, "search/history/recyclingGrid");
 };

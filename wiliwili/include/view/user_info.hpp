@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <borealis/core/box.hpp>
 #include <borealis/core/bind.hpp>
 
 enum class InfoHintType {
@@ -29,14 +30,17 @@ public:
 
     ~UserInfoView() override;
 
-    void setUserInfo(const std::string& avatar, const std::string& username,
-                     const std::string& misc);
+    void setUserInfo(const std::string& avatar, const std::string& username, const std::string& misc);
 
     void setMainTextColor(NVGcolor color);
 
     static brls::View* create();
 
     brls::Image* getAvatar();
+
+    brls::Label* getLabelName();
+
+    brls::Label* getLabelMisc();
 
     void setHintType(InfoHintType type);
 

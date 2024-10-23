@@ -2,6 +2,10 @@
 // Created by fang on 2022/6/9.
 //
 
+#include <borealis/core/thread.hpp>
+#include <borealis/core/touch/tap_gesture.hpp>
+#include <borealis/views/dialog.hpp>
+
 #include "fragment/mine_tab.hpp"
 #include "fragment/mine_qr_login.hpp"
 #include "utils/image_helper.hpp"
@@ -36,6 +40,10 @@ MineTab::MineTab() {
             } catch (...) {
             }
             try {
+                this->mineSubscription->requestData(true);
+            } catch (...) {
+            }
+            try {
                 this->mineAnime->requestData(true);
             } catch (...) {
             }
@@ -45,16 +53,15 @@ MineTab::MineTab() {
             }
             try {
                 this->mineLater->requestData();
-            } catch (...){
+            } catch (...) {
             }
             try {
                 //动态页刷新
                 auto mainTab = dynamic_cast<AutoTabFrame*>(this->getParent());
-                auto* tab = (DynamicTab*)mainTab->getTab(1)->getAttachedView();
+                auto* tab    = (DynamicTab*)mainTab->getTab(1)->getAttachedView();
                 if (!tab) {
                     brls::sync([mainTab]() {
-                        auto tab = dynamic_cast<DynamicTab*>(
-                            mainTab->getTab(1)->createAttachedView());
+                        auto tab = dynamic_cast<DynamicTab*>(mainTab->getTab(1)->createAttachedView());
                         tab->requestUpList();
                         tab->requestDynamicVideoList(1, "");
                     });
@@ -75,17 +82,16 @@ MineTab::MineTab() {
     this->requestData();
 
     GA("user", {{"id", ProgramConfig::instance().getUserID()}})
+    GA("user", {{"user_id", ProgramConfig::instance().getUserID()}})
 }
 
 void MineTab::onCreate() {
-    this->registerTabAction("wiliwili/mine/login/refresh"_i18n,
-                            brls::ControllerButton::BUTTON_X,
+    this->registerTabAction("wiliwili/mine/login/refresh"_i18n, brls::ControllerButton::BUTTON_X,
                             [this](brls::View* view) -> bool {
                                 this->requestData();
                                 return true;
                             });
-    this->boxGotoUserSpace->addGestureRecognizer(
-        new TapGestureRecognizer(this->boxGotoUserSpace));
+    this->boxGotoUserSpace->addGestureRecognizer(new TapGestureRecognizer(this->boxGotoUserSpace));
 
     this->registerTabAction(
         "上一项", brls::ControllerButton::BUTTON_LB,
@@ -133,7 +139,7 @@ void MineTab::onUserInfo(const bilibili::UserResult& data) {
     boxGotoUserSpace->registerAction(
         "hints/ok"_i18n, BUTTON_A,
         [](View*) -> bool {
-            auto dialog = new Dialog("wiliwili/mine/login/logout"_i18n);
+            auto dialog = new brls::Dialog("wiliwili/mine/login/logout"_i18n);
             dialog->addButton("hints/back"_i18n, []() {});
             dialog->addButton("hints/ok"_i18n, []() {
                 ProgramConfig::instance().setCookie({});
@@ -164,9 +170,7 @@ void MineTab::onUserDynamicStat(const bilibili::UserDynamicCount& result) {
     ASYNC_RETAIN
     brls::sync([ASYNC_TOKEN, result]() {
         ASYNC_RELEASE
-        std::string mid = ProgramConfig::instance().getUserID();
-        if (result.data.count(mid) != 0)
-            this->labelDynamic->setText(wiliwili::num2w(result.data.at(mid)));
+        this->labelDynamic->setText(wiliwili::num2w(result.dyn_num));
     });
 }
 

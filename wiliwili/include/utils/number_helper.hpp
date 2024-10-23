@@ -26,10 +26,7 @@ inline std::string pre0(size_t num, size_t length) {
     return std::string(length - str.length(), '0') + str;
 }
 
-static inline time_t unix_time() {
-    return std::chrono::system_clock::to_time_t(
-        std::chrono::system_clock::now());
-}
+static inline time_t unix_time() { return std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()); }
 
 std::string getRandomText(int length = 16);
 
@@ -40,6 +37,10 @@ std::string getRandomHex(int length, bool lowerCase = true);
 //100 => 01:40
 //4180 => 01:09:40
 std::string sec2Time(size_t t);
+
+// 我不知道为什么B站要返回一个字符串来显示视频的长度，然后在前端把这个字符串转换成更好看的时间，这真的很蠢
+// 120:12 => 02:00:12
+std::string uglyString2Time(const std::string& str);
 
 // 100 => 0:01:40
 // 4180 => 1:09:40

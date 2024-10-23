@@ -30,7 +30,6 @@
         <brls:Image
                 id="video/card/picture"
                 scalingType="fill"
-                backgroundColor="@theme/color/grey_1"
                 height="100%"
                 width="100%"
                 image="@res/pictures/video-card-bg.png"
@@ -55,10 +54,9 @@
             <brls:Label
                     id="video/card/label/duration"
                     positionType="absolute"
-                    positionRight="0"
+                    positionRight="10"
                     textColor="#FFFFFF"
-                    fontSize="16"
-                    text="时长：13:14"/>
+                    fontSize="16"/>
         </brls:Box>
 
     </brls:Box>

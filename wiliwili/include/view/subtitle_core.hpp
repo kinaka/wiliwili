@@ -7,11 +7,15 @@
 #include <nanovg.h>
 #include <borealis/core/singleton.hpp>
 #include <borealis/core/application.hpp>
+
 #include "bilibili/result/video_detail_result.h"
+#include "utils/event_helper.hpp"
 #include "presenter/presenter.h"
 
 class SubtitleCore : public brls::Singleton<SubtitleCore>, public Presenter {
 public:
+    SubtitleCore();
+    ~SubtitleCore();
     /**
      * 重置字幕内容为空
      */
@@ -26,8 +30,7 @@ public:
      * @param height 绘制区域的高度
      * @param alpha 组件的透明度，与字幕本身的透明度叠加
      */
-    void drawSubtitle(NVGcontext* vg, float x, float y, float width,
-                      float height, float alpha);
+    void drawSubtitle(NVGcontext* vg, float x, float y, float width, float height, float alpha);
 
     /**
      * 获取字幕数据
@@ -73,4 +76,5 @@ private:
     NVGcolor fontColor       = nvgRGB(255, 255, 255);
     NVGcolor backgroundColor = nvgRGBA(0, 0, 0, 127);
     size_t subtitleIndex     = 0;
+    MPVEvent::Subscription event_id;
 };

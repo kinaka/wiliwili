@@ -4,6 +4,7 @@
         width="auto"
         height="auto">
     <brls:AppletFrame
+            id="collection/appletFrame"
             iconInterpolation="linear"
             headerHidden="true"
             footerHidden="false"
@@ -56,7 +57,7 @@
                     itemHeight="250"
                     grow="1"
                     preFetchLine="1"
-                    spanCount="4"
+                    spanCount="@style/wiliwili/grid/span/4"
                     wireframe="false"
                     id="collection/recyclingGrid"/>
 

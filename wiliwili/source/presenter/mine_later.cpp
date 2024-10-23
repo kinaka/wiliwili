@@ -13,14 +13,14 @@ void MineLaterRequest::onWatchLaterList(const bilibili::WatchLaterListWrapper& r
 
 void MineLaterRequest::onError(const std::string& error) {}
 
-void MineLaterRequest::requestData(bool refresh) {
-    this->requestWatchLaterList();
-}
+void MineLaterRequest::requestData(bool refresh) { this->requestWatchLaterList(); }
 
 void MineLaterRequest::requestWatchLaterList() {
-    bilibili::BilibiliClient::getWatchLater(
-        [this](const auto &result){
-            this->onWatchLaterList(result);
-        }
-        );
+    auto mid = ProgramConfig::instance().getUserID();
+    if (mid.empty() || mid == "0") {
+        this->onError("wiliwili/home/common/no_login"_i18n);
+        return;
+    }
+    BILI::getWatchLater([this](const auto& result) { this->onWatchLaterList(result); },
+                        [this](BILI_ERR) { this->onError(error); });
 }

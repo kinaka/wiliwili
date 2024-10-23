@@ -4,47 +4,33 @@
 
 #pragma once
 
-#include "bilibili.h"
 #include "bilibili/result/home_live_result.h"
+#include "bilibili/result/live_danmaku_result.h"
 #include "presenter/presenter.h"
-#include "utils/config_helper.hpp"
-#include "presenter/video_detail.hpp"
 
 class LiveDataRequest : public Presenter {
 public:
-    virtual void onLiveData(const bilibili::LiveUrlResultWrapper& result) {}
+    virtual void onLiveData(const bilibili::LiveRoomPlayInfo& result) {}
 
     virtual void onError(const std::string& error) {}
 
-    void requestData(int roomid) {
-        ASYNC_RETAIN
-        BILI::get_live_url(
-            roomid, defaultQuality,
-            [ASYNC_TOKEN](const bilibili::LiveUrlResultWrapper& result) {
-                ASYNC_RELEASE
-                liveUrl = result;
-                onLiveData(result);
-            },
-            [ASYNC_TOKEN](BILI_ERR) {
-                ASYNC_RELEASE
-                this->onError(error);
-            });
+    virtual void onNeedPay(const std::string& msg, const std::string& link, const std::string& startTime,
+                           const std::string& endTime) {}
 
-        reportHistory(roomid);
-    }
+    virtual void onDanmakuInfo(int roomid, const bilibili::LiveDanmakuinfo& info) {}
 
-    void reportHistory(int roomid) {
-        // 复用视频播放页面的标记
-        if (!VideoDetail::REPORT_HISTORY) return;
+    void requestData(int roomid);
 
-        BILI::report_live_history(
-            roomid, ProgramConfig::instance().getCSRF(),
-            [roomid]() {
-                brls::Logger::debug("report live history {}", roomid);
-            },
-            [this](BILI_ERR) { this->onError(error); });
-    }
+    void reportHistory(int roomid);
 
-    static inline int defaultQuality = 10000;
-    bilibili::LiveUrlResultWrapper liveUrl;
+    void requestPayLiveInfo(int roomid);
+
+    void requestLiveDanmakuToken(int roomid);
+
+    std::string getQualityDescription(int qn);
+
+    static inline int defaultQuality = 0;
+    bilibili::LiveRoomPlayInfo liveRoomPlayInfo{};
+    bilibili::LiveStreamFormatCodec liveUrl{};
+    std::unordered_map<int, std::string> qualityDescriptionMap{};
 };
